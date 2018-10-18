@@ -15,6 +15,8 @@ library(ggplot2)
 ```
 
 ```{r}
+#load in data and select only solo data
+
 PUBG <- read.csv("~/PUBG_Player_Statistics.csv")
 PUBGsolo <- PUBG %>%
   select(solo_KillDeathRatio, solo_RoundsPlayed, solo_Rating, solo_DamagePg, solo_HeadshotKillsPg, solo_HealsPg, solo_KillsPg, solo_MoveDistancePg, solo_RoadKillsPg, solo_TeamKillsPg, solo_TimeSurvivedPg, solo_Kills, solo_Assists, solo_Suicides, solo_MaxKillStreaks)
@@ -37,6 +39,8 @@ sum$outmat
 ```
 
 ```{r}
+#different regressions based on best subset
+
 reg1 <- lm(solo_Rating ~ solo_Kills,PUBGsolo)
 summary(reg1)
 reg2 <- lm(solo_Rating ~ solo_Kills+solo_MoveDistancePg, PUBGsolo)
@@ -65,6 +69,8 @@ PUBG1 <- PUBG1 %>%
 ```
 
 ```{r}
+#testing residual data for homoskedasticity and normal distribution
+
 PUBG1 %>%
   ggplot(aes(res))+
   geom_histogram(bins = 20, fill = 'darkgreen')
@@ -78,6 +84,8 @@ ncvTest(reg7)
 ```
 
 ```{r}
+#testing if transformations improve prediction
+
 pubg <- PUBGsolo %>%
   mutate(logRating = log(solo_Rating), logKills = log(solo_Kills+1), logDist = log(solo_MoveDistancePg+1), logRounds = log(solo_RoundsPlayed+1), logStreak = log(solo_MaxKillStreaks+1))
 reg10 <- lm(logRating ~ logKills+logDist+logRounds+logStreak+solo_KillsPg+solo_HealsPg, pubg)
@@ -91,6 +99,8 @@ pubg1 <- pubg1 %>%
 ```
 
 ```{r}
+#check residuals again
+
 pubg1 %>%
   ggplot(aes(res))+
   geom_histogram(bins = 20, fill = 'darkgreen')
@@ -104,21 +114,13 @@ ncvTest(reg10)
 ```
 
 
-
-
-
 ```{r}
+#prediction for a ranking based on possible stats
+
 newdata = data.frame(logKills=6, logDist=8.5, logRounds=5, logStreak=1.2, solo_KillsPg=5, solo_DamagePg=400, solo_HealsPg=2.5)
 predict(reg10, newdata, interval = 'predict')
 ```
 
-```{r}
-2.718281828459^6
-2.718281828459^8.5
-2.718281828459^5
-2.718281828459^1.2
-2.718281828459^7.724347
-```
 
 
 

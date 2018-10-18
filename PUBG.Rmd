@@ -1,0 +1,138 @@
+---
+title: "Final"
+author: "Alex Tubbs"
+date: "5/2/2018"
+output:
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(car)
+library(leaps)
+library(ggplot2)
+```
+
+```{r}
+PUBG <- read.csv("~/PUBG_Player_Statistics.csv")
+PUBGsolo <- PUBG %>%
+  select(solo_KillDeathRatio, solo_RoundsPlayed, solo_Rating, solo_DamagePg, solo_HeadshotKillsPg, solo_HealsPg, solo_KillsPg, solo_MoveDistancePg, solo_RoadKillsPg, solo_TeamKillsPg, solo_TimeSurvivedPg, solo_Kills, solo_Assists, solo_Suicides, solo_MaxKillStreaks)
+```
+
+```{r}
+PUBGsolo %>%
+  ggplot(aes(solo_Rating))+
+  geom_histogram(fill = 'navy', color = 'purple')
+```
+
+```{r}
+cor(PUBGsolo)
+```
+
+```{r}
+best.subset <- regsubsets(solo_Rating~.,PUBGsolo,nvmax = 10) #only things in parentheses change
+sum <- summary(best.subset)
+sum$outmat
+```
+
+```{r}
+reg1 <- lm(solo_Rating ~ solo_Kills,PUBGsolo)
+summary(reg1)
+reg2 <- lm(solo_Rating ~ solo_Kills+solo_MoveDistancePg, PUBGsolo)
+summary(reg2)
+reg3 <- lm(solo_Rating ~ solo_Kills+solo_MoveDistancePg+solo_RoundsPlayed, PUBGsolo)
+summary(reg3)
+reg4 <- lm(solo_Rating ~ solo_Kills+solo_MoveDistancePg+solo_RoundsPlayed+solo_MaxKillStreaks, PUBGsolo)
+summary(reg4)
+reg5 <- lm(solo_Rating ~ solo_Kills+solo_MoveDistancePg+solo_RoundsPlayed+solo_MaxKillStreaks+solo_KillsPg, PUBGsolo)
+summary(reg5)
+reg6 <- lm(solo_Rating ~ solo_Kills+solo_MoveDistancePg+solo_RoundsPlayed+solo_MaxKillStreaks+solo_KillsPg+solo_DamagePg, PUBGsolo)
+summary(reg6)
+reg7 <- lm(solo_Rating ~ solo_Kills+solo_MoveDistancePg+solo_RoundsPlayed+solo_MaxKillStreaks+solo_KillsPg+solo_DamagePg+solo_HealsPg, PUBGsolo)
+summary(reg7)
+reg8 <- lm(solo_Rating ~ solo_Kills+solo_MoveDistancePg+solo_RoundsPlayed+solo_MaxKillStreaks+solo_KillsPg+solo_DamagePg+solo_HealsPg+solo_RoadKillsPg, PUBGsolo)
+summary(reg8)
+```
+```{r}
+summary(reg7)
+```
+
+```{r}
+PUBG1 <- cbind(PUBGsolo, reg7$residuals, reg7$fitted.values)
+PUBG1 <- PUBG1 %>%
+  rename(res = 'reg7$residuals', fitted = 'reg7$fitted.values')
+```
+
+```{r}
+PUBG1 %>%
+  ggplot(aes(res))+
+  geom_histogram(bins = 20, fill = 'darkgreen')
+#shapiro.test(PUBG1$res)
+qqnorm(PUBG1$res)
+PUBG1 %>%
+  ggplot(aes(fitted, res)) +
+  geom_point(color = 'red')+
+  geom_smooth(method = 'lm')
+ncvTest(reg7)
+```
+
+```{r}
+pubg <- PUBGsolo %>%
+  mutate(logRating = log(solo_Rating), logKills = log(solo_Kills+1), logDist = log(solo_MoveDistancePg+1), logRounds = log(solo_RoundsPlayed+1), logStreak = log(solo_MaxKillStreaks+1))
+reg10 <- lm(logRating ~ logKills+logDist+logRounds+logStreak+solo_KillsPg+solo_HealsPg, pubg)
+summary(reg10)
+```
+
+```{r}
+pubg1 <- cbind(pubg, reg10$residuals, reg10$fitted.values)
+pubg1 <- pubg1 %>%
+  rename(res = 'reg10$residuals', fitted = 'reg10$fitted.values')
+```
+
+```{r}
+pubg1 %>%
+  ggplot(aes(res))+
+  geom_histogram(bins = 20, fill = 'darkgreen')
+#shapiro.test(pubg1$res)
+qqnorm(pubg1$res)
+pubg1 %>%
+  ggplot(aes(fitted, res)) +
+  geom_point(color = 'maroon')+
+  geom_smooth(method = 'lm')
+ncvTest(reg10)
+```
+
+
+
+
+
+```{r}
+newdata = data.frame(logKills=6, logDist=8.5, logRounds=5, logStreak=1.2, solo_KillsPg=5, solo_DamagePg=400, solo_HealsPg=2.5)
+predict(reg10, newdata, interval = 'predict')
+```
+
+```{r}
+2.718281828459^6
+2.718281828459^8.5
+2.718281828459^5
+2.718281828459^1.2
+2.718281828459^7.724347
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
